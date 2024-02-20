@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Notification Test</h1>
+  </body>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/service-worker.js")
+          .then((registration) => {
+            console.log("Service Worker registered: ", registration);
+          })
+          .catch((error) => {
+            console.log("Service Worker registration failed: ", error);
+          });
+      });
+    }
+
+    // Request permission for push notifications
+    if ("Notification" in window) {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          subscribeUserToPush();
+        }
+      });
+    }
+
+    function subscribeUserToPush() {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.pushManager
+          .subscribe({
+            userVisibleOnly: true,
+            applicationServerKey:
+              "BK27gD6JEgz4fZ47aS7azqgRSSE48_4esZ1CC5QOHnBHkCE5WW1LeCnxefFlLcJbHAVdxGKBAi9yedf2gDKRHb0",
+          })
+          .then((subscription) => {
+            // Send subscription to your backend server
+            let subs = subscription;
+            sendSubscriptionToBackend(subs);
+          })
+          .catch((error) => {
+            console.error("Failed to subscribe the user: ", error);
+          });
+      });
+    }
+
+    function sendSubscriptionToBackend(as) {
+      console.log(as);
+      // Send subscription object to your backend server
+      fetch("http://127.0.0.1:8001/subscribe/" + crypto.randomUUID(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(as),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to send subscription to backend");
+          }
+        })
+        .catch((error) => {
+          console.error("Error sending subscription to backend: ", error);
+        });
+    }
+  </script>
+</html>
